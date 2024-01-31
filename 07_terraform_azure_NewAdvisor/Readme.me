@@ -1,0 +1,79 @@
+Prerequisite
+	- change backend.tf
+	- modify prod.tfvars
+	- modify main.tf
+		subscription_id
+		tenant_id
+
+
+I/ Azure terraform with backend 
+    1. login 
+		my personal account
+    		az login --tenant e330c740-f050-4734-8052-
+		milize account
+			az login --tenant 1ddbf0d7-ff8d-4f3e-9f06-f00b74abd713
+    2. listing output
+    	az account list --output table
+    3. set subscription
+    	az account set --subscription <Azure-SubscriptionId>
+		my personal account
+			az account set --subscription 8c4ec9d2-17bd-4408-a839-641edacc6c41
+		milize account
+			az account set --subscription 38c7c146-3438-427f-8761-7b47f9381108
+    4. listup available region
+    	az account list-locations --output table
+    5. create be
+    	https://learn.microsoft.com/en-us/azure/developer/terraform/store-state-in-azure-storage?tabs=azure-cli#code-try-0
+		
+    	RESOURCE_GROUP_NAME=TerraformAzure
+    	STORAGE_ACCOUNT_NAME=terraformazureprodsa
+    	CONTAINER_NAME=terraformazure-prod-container
+    	az group create --name TerraformAzure --location japaneast
+    	# Create resource group
+    	az group create --name $RESOURCE_GROUP_NAME --location japaneast
+
+    	# Create storage account
+    	az storage account create --resource-group $RESOURCE_GROUP_NAME --name $STORAGE_ACCOUNT_NAME --sku Standard_LRS --encryption-services blob
+
+    	# Create blob container
+    	az storage container create --name $CONTAINER_NAME --account-name $STORAGE_ACCOUNT_NAME
+II/ How to run
+    - init backend
+        terraform init
+        terraform apply --auto-approve -var-file="prod.tfvars"
+	- force unlock
+		terraform force-unlock -force 9d74015a-37e9-1ce1-1eb8-333a8ee759a9
+	- destroy
+		terraform destroy --auto-approve -var-file="prod.tfvars"
+III/ Kubenetes operation
+	https://stacksimplify.com/azure-aks/create-aks-cluster-with-custom-vnet-using-terraform/
+	- Configure kubectl with Default Admin Credentials
+	az aks get-credentials --resource-group TerraformAzure --name  TerraformAzure-AKS-Cluster
+	- if you use AD for authentication
+	az aks get-credentials --resource-group TerraformAzure --name  TerraformAzure-AKS-Cluster --admin
+	- List nodepool
+	az aks nodepool list --resource-group TerraformAzure --cluster-name  TerraformAzure-AKS-Cluster --output table
+IV/ Create nginx as ingress gateway
+	- https://learn.microsoft.com/en-us/azure/aks/ingress-basic?tabs=azure-cli
+	kubectl create namespace ingress-test24102023
+	# Get RG with AKS cluster
+	az aks show --resource-group TerraformAzure --name TerraformAzure-AKS-Cluster --query nodeResourceGroup -o tsv
+		=> TerraformAzure-nrg
+	#Request static IP for nginx
+	az network public-ip create --resource-group TerraformAzure-nrg --name myAKSPublicIPForIngress --sku Standard --allocation-method static --query publicIp.ipAddress -o tsv 
+	#Provisioning
+	helm install ingress-nginx ingress-nginx/ingress-nginx \
+    --namespace ingress-roytest123 \
+    --set controller.replicaCount=2 \
+    --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux \
+    --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux \
+    --set controller.service.externalTrafficPolicy=Local \
+	--set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
+    --set controller.service.loadBalancerIP="20.27.37.201" \
+	--debug
+	#uninstall
+	helm uninstall ingress-nginx ingress-nginx/ingress-nginx \
+    --namespace ingress-test24102023
+
+
+
