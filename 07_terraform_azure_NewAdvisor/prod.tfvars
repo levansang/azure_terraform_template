@@ -12,8 +12,6 @@ vnet_name               = "newads-stg-network"
 acr_name                = "newadsstgAcr"
 acr_sku                 = "Standard"
 
-#Application Gateway variable
-app_gateway_min_capacity      = 0
-app_gateway_max_capacity      = 2
+
 
 
