@@ -24,6 +24,8 @@
 #   content_type = "text/html"
 #   source_content = var.source_content
 # }
+
+
 #Create azure static web
 resource "azurerm_static_site" "example" {
   name                = var.web_static_name

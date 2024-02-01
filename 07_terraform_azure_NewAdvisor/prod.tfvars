@@ -12,6 +12,7 @@ vnet_name               = "newads-stg-network"
 acr_name                = "newadsstgAcr"
 acr_sku                 = "Standard"
 
+sa_name                 = "newadstg"
 
 
 
